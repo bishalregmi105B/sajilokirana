@@ -1,0 +1,44 @@
+/**
+ * Typed HTTP errors. Throwing `HttpError` subclasses lets the central error
+ * handler (middleware/error.ts) produce consistent JSON without try/catch soup.
+ */
+export class HttpError extends Error {
+  constructor(
+    public statusCode: number,
+    message: string,
+    public details?: unknown,
+  ) {
+    super(message);
+    this.name = 'HttpError';
+  }
+}
+
+export class BadRequestError extends HttpError {
+  constructor(message = 'Bad request', details?: unknown) {
+    super(400, message, details);
+  }
+}
+
+export class UnauthorizedError extends HttpError {
+  constructor(message = 'Unauthorized') {
+    super(401, message);
+  }
+}
+
+export class ForbiddenError extends HttpError {
+  constructor(message = 'Forbidden') {
+    super(403, message);
+  }
+}
+
+export class NotFoundError extends HttpError {
+  constructor(message = 'Not found') {
+    super(404, message);
+  }
+}
+
+export class ConflictError extends HttpError {
+  constructor(message = 'Conflict', details?: unknown) {
+    super(409, message, details);
+  }
+}

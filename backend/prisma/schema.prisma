@@ -1,0 +1,178 @@
+// SajiloKirana — Prisma schema (Part D.2).
+// Generator + datasource
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Identity
+// ────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  phone     String    @unique
+  language  String    @default("ne")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  addresses Address[]
+  orders    Order[]
+
+  @@index([phone])
+}
+
+model Address {
+  id       String @id @default(uuid())
+  userId   String
+  label    String // "Home", "Office", ...
+  line1    String
+  line2    String?
+  city     String
+  lat      Float
+  lng      Float
+  isDefault Boolean @default(false)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Supply side
+// ────────────────────────────────────────────────────────────────────────────
+
+model Shop {
+  id               String   @id @default(uuid())
+  ownerName        String
+  shopName         String
+  phone            String
+  lat              Float
+  lng              Float
+  categories       String[]
+  onboardingTier   Int      @default(2) // 1=SMS only, 2=default app, 3=power catalog
+  status           String   @default("active") // active | paused | suspended
+  reliabilityScore Float    @default(0.5) // 0..1 — see dispatch engine D.4 step 7
+  payoutAccount    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  inventory        ShopInventory[]
+  wonOrders        Order[]  @relation("ShopOrders")
+  broadcasts       DispatchBroadcast[]
+
+  @@index([status])
+}
+
+model ProductCatalog {
+  id       String @id @default(uuid())
+  name     String
+  category String
+  unit     String
+  inventory ShopInventory[]
+  orderItems OrderItem[]
+
+  @@index([category])
+}
+
+model ShopInventory {
+  shopId          String
+  productId       String
+  price           Float
+  inStock         Boolean  @default(true)
+  lastConfirmedAt DateTime @default(now())
+  shop            Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product         ProductCatalog @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([shopId, productId])
+  @@index([inStock])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Orders + dispatch
+// ────────────────────────────────────────────────────────────────────────────
+
+model Order {
+  id               String   @id @default(uuid())
+  customerId       String
+  status           String   @default("pending")
+  // pending | broadcasting | shop_confirmed | picked_up | in_transit | delivered | cancelled
+  assignedShopId   String?
+  assignedDriverId String?
+  batchId          String?
+  etaSeconds       Int?
+  totalAmount      Float    @default(0)
+  deliveryAddress  Json?    // snapshot of Address at order time
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  customer         User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignedShop     Shop?    @relation("ShopOrders", fields: [assignedShopId], references: [id])
+  assignedDriver   Driver?  @relation("DriverOrders", fields: [assignedDriverId], references: [id])
+  batch            Batch?   @relation(fields: [batchId], references: [id])
+  items            OrderItem[]
+  broadcasts       DispatchBroadcast[]
+
+  @@index([customerId])
+  @@index([assignedShopId])
+  @@index([status])
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String
+  productId String
+  qty       Int
+  unitPrice Float
+  order     Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   ProductCatalog @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+}
+
+model DispatchBroadcast {
+  id                   String   @id @default(uuid())
+  orderId              String
+  candidateShopIds     String[]
+  broadcastAt          DateTime @default(now())
+  confirmWindowSeconds Int      @default(40)
+  winningShopId        String?
+  confirmedAt          DateTime?
+  order                Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  shop                 Shop?    @relation(fields: [winningShopId], references: [id])
+
+  @@index([orderId])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Delivery
+// ────────────────────────────────────────────────────────────────────────────
+
+model Driver {
+  id              String   @id @default(uuid())
+  name            String
+  phone           String   @unique
+  vehicleType     String   // bike | scooter | cycle
+  currentLat      Float?
+  currentLng      Float?
+  status          String   @default("offline") // offline | available | busy
+  currentBatchId  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  batches         Batch[]
+  assignedOrders  Order[]  @relation("DriverOrders")
+
+  @@index([status])
+}
+
+model Batch {
+  id        String   @id @default(uuid())
+  driverId  String
+  orderIds  String[]
+  status    String   @default("assigned") // assigned | in_progress | completed
+  createdAt DateTime @default(now())
+  driver    Driver   @relation(fields: [driverId], references: [id])
+  orders    Order[]
+
+  @@index([driverId])
+}

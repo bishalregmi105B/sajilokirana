@@ -1,0 +1,72 @@
+name: ecom
+description: A new Flutter project.
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.0.5 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_dotenv: ^5.1.0
+  flutter_svg: ^2.0.7
+  fluttertoast: ^8.2.8
+  share_plus: ^7.0.2
+  shimmer: ^3.0.0
+  lottie: ^3.1.0
+  pdfx: ^2.6.0
+  provider: ^6.0.5
+  flutter_secure_storage: ^9.2.4
+  dio: ^5.3.0
+  path_provider: ^2.1.6
+  google_fonts: ^6.2.1
+  socket_io_client: ^2.0.3+1
+
+dependency_overrides:
+  archive: ^4.0.9
+  win32: ^5.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  flutter_native_splash:
+
+flutter_native_splash:
+  image: Assets/splash2.png
+  color: "#A8442C"
+  ios: false
+  web: false
+  android_12:
+    image: Assets/splash2.png
+    icon_background_color: "#A8442C"
+
+
+flutter:
+  uses-material-design: true
+  assets:
+    - Assets/
+    - Assets/cimgs/
+    - Assets/Categories/
+    - Assets/SubCategories/
+    - Assets/Products/
+    - Assets/Images/
+
+
+  fonts:
+    - family: Catamaran
+      fonts:
+        - asset: Assets/Fonts/Catamaran-Regular.ttf
+        - asset: Assets/Fonts/Catamaran-Bold.ttf
+          weight: 700
+        - asset: Assets/Fonts/Catamaran-ExtraBold.ttf
+          weight: 800
+        - asset: Assets/Fonts/Catamaran-Light.ttf
+          weight: 300
+        - asset: Assets/Fonts/Catamaran-Medium.ttf
+          weight: 500
+        - asset: Assets/Fonts/Catamaran-Thin.ttf
+          weight: 100
+        - asset: Assets/Fonts/Catamaran-SemiBold.ttf
+          weight: 600

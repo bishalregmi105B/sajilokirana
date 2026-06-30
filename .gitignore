@@ -1,0 +1,29 @@
+# Backend
+backend/node_modules/
+backend/.env
+backend/dist/
+backend/prisma/*.db
+
+# Flutter
+customer_app/.dart_tool/
+customer_app/.packages
+customer_app/build/
+customer_app/android/.gradle/
+customer_app/android/local.properties
+customer_app/ios/.symlinks/
+customer_app/ios/Pods/
+driver_app/.dart_tool/
+driver_app/build/
+shopkeeper_app/.dart_tool/
+shopkeeper_app/build/
+
+# ML
+ml_service/__pycache__/
+ml_service/*.pyc
+ml_service/models/*.pkl
+ml_service/.venv/
+
+# Secrets
+*.env
+.env.*
+!.env.example
