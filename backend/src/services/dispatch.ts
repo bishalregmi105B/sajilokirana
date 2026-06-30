@@ -26,6 +26,8 @@ import { ConflictError, NotFoundError } from '../utils/errors';
 // ── Types ──────────────────────────────────────────────────────────────────
 export interface CandidateShop {
   id: string;
+  lat: number;
+  lng: number;
   distanceKm: number;
   reliabilityScore: number;
   recentActivity: number; // # of orders in last 24h (recency proxy)
@@ -135,7 +137,7 @@ export class DispatchEngine {
       return;
     }
 
-    const ranked = await this.rankWithMl(candidates);
+    const ranked = await this.rankWithMl(candidates, delivery.lat, delivery.lng);
     const topN = ranked.slice(0, env.dispatch.topNCandidates);
 
     // Create the broadcast record.
@@ -206,6 +208,8 @@ export class DispatchEngine {
     return shops
       .map((shop) => ({
         id: shop.id,
+        lat: shop.lat,
+        lng: shop.lng,
         distanceKm: haversineKm(lat, lng, shop.lat, shop.lng),
         reliabilityScore: shop.reliabilityScore,
         recentActivity: activityByShop.get(shop.id) ?? 0,
@@ -217,7 +221,7 @@ export class DispatchEngine {
    * Rank candidates, preferring the ML service (Part E.6 Phase 2) but
    * gracefully degrading to the local weighted formula.
    */
-  async rankWithMl(shops: CandidateShop[]): Promise<CandidateShop[]> {
+  async rankWithMl(shops: CandidateShop[], orderLat: number, orderLng: number): Promise<CandidateShop[]> {
     if (!env.mlServiceUrl) {
       return rankCandidates(shops); // local fallback
     }
@@ -226,16 +230,23 @@ export class DispatchEngine {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          candidate_shop_ids: shops.map((s) => s.id),
-          shops: shops,
+          order_lat: orderLat,
+          order_lng: orderLng,
+          candidates: shops.map((s) => ({
+            id: s.id,
+            lat: s.lat,
+            lng: s.lng,
+            reliability: s.reliabilityScore,
+            seconds_since_last: s.recentActivity * 1800, // rough proxy: 30min per order
+          })),
         }),
         signal: AbortSignal.timeout(2000),
       });
       if (!res.ok) throw new Error(`ml http ${res.status}`);
-      const data = (await res.json()) as { ranked_shops: { shop_id: string; score: number }[] };
+      const data = (await res.json()) as { ranked: { id: string; score: number }[] };
       const byId = new Map(shops.map((s) => [s.id, s]));
-      return data.ranked_shops
-        .map((r) => ({ ...byId.get(r.shop_id)!, score: r.score }))
+      return data.ranked
+        .map((r) => ({ ...byId.get(r.id)!, score: r.score }))
         .filter(Boolean);
     } catch (err) {
       console.warn('[dispatch] ML score unavailable, using local formula:', (err as Error).message);

@@ -48,7 +48,7 @@ model Shop {
   id               String   @id @default(uuid())
   ownerName        String
   shopName         String
-  phone            String
+  phone            String   @unique
   lat              Float
   lng              Float
   categories       String[]
