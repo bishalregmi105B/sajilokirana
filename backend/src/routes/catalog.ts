@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../utils/asyncHandler';
 import { prisma } from '../config/prisma';
+import { NotFoundError } from '../utils/errors';
 
 export const catalogRouter = Router();
 
@@ -26,6 +27,35 @@ catalogRouter.get(
       orderBy: { category: 'asc' },
     });
     res.json(rows.map((r) => r.category));
+  }),
+);
+
+catalogRouter.get(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const product = await prisma.productCatalog.findUnique({
+      where: { id: req.params.id as string },
+      include: {
+        inventory: {
+          where: { inStock: true },
+          include: {
+            shop: { select: { id: true, shopName: true, lat: true, lng: true, reliabilityScore: true } },
+          },
+          orderBy: { price: 'asc' },
+        },
+      },
+    });
+    if (!product) throw new NotFoundError('Product not found');
+    res.json({
+      id: product.id, name: product.name, category: product.category, unit: product.unit,
+      shops: product.inventory.map((inv) => ({
+        shopId: inv.shop.id, shopName: inv.shop.shopName, price: inv.price,
+        inStock: inv.inStock, lat: inv.shop.lat, lng: inv.shop.lng,
+        reliabilityScore: inv.shop.reliabilityScore,
+      })),
+      minPrice: product.inventory[0]?.price ?? null,
+      inStock: product.inventory.length > 0,
+    });
   }),
 );
 

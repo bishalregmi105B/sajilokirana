@@ -20,6 +20,7 @@ import { shopRouter } from './routes/shop';
 import { driverRouter } from './routes/driver';
 import { webhooksRouter } from './routes/webhooks';
 import { usersRouter } from './routes/users';
+import { adminRouter } from './routes/admin';
 
 import { notFound, errorHandler } from './middleware/error';
 
@@ -42,6 +43,7 @@ app.use('/orders', ordersRouter);
 app.use('/shop', shopRouter);
 app.use('/driver', driverRouter);
 app.use('/webhooks', webhooksRouter);
+app.use('/admin', adminRouter);
 app.use('/', usersRouter);
 
 // ── Error layer (must be last) ────────────────────────────────────────────

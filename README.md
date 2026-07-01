@@ -123,6 +123,15 @@ GET  /ml/forecast/shop/{id}/sku/{id}  demand forecast (Phase 0 stub)
 GET  /healthz
 ```
 
+### 5. Web app (Next.js)
+```bash
+cd web
+npm install
+npm run dev
+# Open http://localhost:3000
+# Set NEXT_PUBLIC_API_URL=http://localhost:4000 in .env.local if needed
+```
+
 ## License
 
 MIT
